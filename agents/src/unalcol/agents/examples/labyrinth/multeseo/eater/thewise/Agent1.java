@@ -1,10 +1,12 @@
 package unalcol.agents.examples.labyrinth.multeseo.eater.thewise;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Stack;
 
 import javax.sound.midi.Patch;
+import javax.swing.text.html.HTMLDocument.HTMLReader.PreAction;
 
 import java.util.Queue;
 
@@ -33,8 +35,8 @@ public class Agent1 implements AgentProgram
 	private int currentEnergy = 0;
 	private int partialEnergy = 0;
 	private boolean eat = false;
-	private HashMap<Position, Integer> goodFood = new HashMap<>();
-	private HashMap<Position, Integer> badFood = new HashMap<>();
+	private HashMap<Position, BarCode> goodFood = new HashMap<>();
+	private HashMap<Position, BarCode> badFood = new HashMap<>();
 	private Position lastGoodFood;
 	private boolean slowEnergy = false;
 	
@@ -47,13 +49,18 @@ public class Agent1 implements AgentProgram
 	private boolean eat2= false;
 	private boolean eat3= false;
 	private boolean eat4= false;
-	private HashMap<Position, Integer> codesEat = new HashMap<>();
+	private HashMap<Position, BarCode> codesEat = new HashMap<>();
 	private int minLevelEnergy = 15;
 	private boolean ate = false;
 	private boolean searchingFood = false;
 	private Node home = null;
 	private boolean findingHome = false;
-	
+	private HashSet<BarCode> badFoodCode = new HashSet<>();
+	private HashSet<BarCode> goodFoodCode = new HashSet<>();
+	private boolean eatingGood = false;
+	private int maxEnergy = 0;
+	private boolean maxEnergyFound = false;
+	private int numberOfFeed = 6;
 	
 	public Agent1( SimpleLanguage language )
 	{
@@ -273,11 +280,9 @@ public class Agent1 implements AgentProgram
 	
 	public int findGoodFood(){
 		searchingFood = true;
-		System.out.println("This is current: " + current);
 	
 		Node next = pathFoodMostNearly.pop();
 		comeBack.push(next);
-		System.out.println("Poping: " + next);
 		int d = move(current.getPosition(), next.getPosition());
 		
 		current = next;
@@ -288,14 +293,12 @@ public class Agent1 implements AgentProgram
 	public int findHome(){
 		
 		
-		System.out.println("Going Home, the current is: " + current);
 		
 		if (current.equals(home))
 			return -1;
 		
 		Node next = comeBack.pop();
 		
-		System.out.println("Going Home, Poping: " + next);
 		int d = move(current.getPosition(), next.getPosition());
 		
 		current = next;
@@ -317,21 +320,18 @@ public class Agent1 implements AgentProgram
 				comeBack.push(home);
 				
 			}
-			System.out.println("Good food: " + pathFoodMostNearly.get(0));
 			int val = findGoodFood();
 			if ( val == -1 ){
 				searchingFood = false;
 				findingHome = true;
 				comeBack.pop();
 				comeBack.pop();
-				System.out.println("Now we have: " + comeBack);
 			}
 			else return val;
 		}
 		
 		if (findingHome)	
 		{
-			System.out.println("To Home: " + home);
 			int d = findHome();
 			
 			if (d == -1)
@@ -401,12 +401,45 @@ public class Agent1 implements AgentProgram
 //				booleanValue();
 //	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
 //				booleanValue();
+		    
+		    
+	    currentEnergy = ( int ) p.getAttribute( "energy_level" );
+		if (eatingGood)
+		{
+			if (partialEnergy >= currentEnergy){
+				maxEnergy = partialEnergy;
+				maxEnergyFound = true;
+			}
+			
+		}
+		
+		
+		if (maxEnergyFound)
+		{
+			if (Math.abs(currentEnergy - maxEnergy) <= 10)
+			{
+				
+				int n = 0;
+			
+				for (int j = 0; j < cmds.size(); ++j)
+				{
+					if ( cmds.get(j).equals( language.getAction( 4 ) )) 
+					{
+						n++;
+					}
+				}
+				
+				numberOfFeed -= n;
+				
+			}
+				
+		}
+		    
 		if( cmds.size() == 0 )
 		{
 			
 			
 			
-			System.out.println("This is the Path to the most nearly food: " + pathFoodMostNearly); 
 			
 			if (!searchingFood){
 				//!pathFoodMostNearly.contains(current) && 
@@ -421,29 +454,52 @@ public class Agent1 implements AgentProgram
 				
 			}
 				
-			currentEnergy = ( int ) p.getAttribute( "energy_level" );
+			;
 			if (ate) {
+				
+				
 		    	if (currentEnergy - partialEnergy >= 0) {
 		    		pathFoodMostNearly.clear();
 		    		pathFoodMostNearly.push(newCurrent);
 		    		
-					goodFood.put(newCurrent.getPosition(), Math.abs(currentEnergy - partialEnergy));
+		    		goodFoodCode.add(new BarCode(eat1, eat2, eat3, eat4));
+					goodFood.put(newCurrent.getPosition(), new BarCode(eat1, eat2, eat3, eat4));
 				}else{
-					badFood.put(newCurrent.getPosition(),  Math.abs(currentEnergy - partialEnergy));
+					badFoodCode.add(new BarCode(eat1, eat2, eat3, eat4));
+					badFood.put(newCurrent.getPosition(),  new BarCode(eat1, eat2, eat3, eat4));
 				}
 			}
 			
-			if (food && !ate && !badFood.containsKey(current.getPosition())) {
+			
+			
+			if (food)
+			{
+				eat1 = ( ( Boolean ) p.getAttribute( language.getPercept( 11 ) ) ).
+						booleanValue();
+				eat2 = ( ( Boolean ) p.getAttribute( language.getPercept( 12 ) ) ).
+						booleanValue();
+				eat3 = ( ( Boolean ) p.getAttribute( language.getPercept( 13 ) ) ).
+						booleanValue();
+				eat4 = ( ( Boolean ) p.getAttribute( language.getPercept( 14 ) ) ).
+						booleanValue();
+			}
+			
+			
+			
+			if (food && !ate && !badFoodCode.contains(new BarCode(eat1, eat2, eat3, eat4))) {
+				
+				
 				partialEnergy = ( int ) p.getAttribute( "energy_level" );
-				System.out.println("Bad food: " + badFood);
 				
 				cmds.add( language.getAction( 4 ) );
 				
-				if (goodFood.containsKey(current.getPosition()))
+				if (goodFoodCode.contains(new BarCode(eat1, eat2, eat3, eat4)))
 				{
-					cmds.add( language.getAction( 4 ) );
-					cmds.add( language.getAction( 4 ) );
-					cmds.add( language.getAction( 4 ) );
+					eatingGood = true;
+					///if (!maxEnergyFound)
+					
+					for (int i = 0; i < numberOfFeed; i++)
+						cmds.add( language.getAction( 4 ) );
 					
 				}
 				ate = true;
@@ -451,7 +507,6 @@ public class Agent1 implements AgentProgram
 			}else{
 				ate = false;
 				
-				System.out.println("My Current Energy is: " + currentEnergy);
 				
 				
 				
@@ -483,3 +538,59 @@ public class Agent1 implements AgentProgram
 		cmds.clear();
 	}
 }
+
+
+
+class BarCode
+{
+	boolean eat1;
+	boolean eat2;
+	boolean eat3;
+	boolean eat4;
+	
+	public BarCode(boolean eat1, boolean eat2, boolean eat3, boolean eat4)
+	{
+		this.eat1 = eat1;
+		this.eat2 = eat2;
+		this.eat3 = eat3;
+		this.eat4 = eat4;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (eat1 ? 1231 : 1237);
+		result = prime * result + (eat2 ? 1231 : 1237);
+		result = prime * result + (eat3 ? 1231 : 1237);
+		result = prime * result + (eat4 ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BarCode other = (BarCode) obj;
+		if (eat1 != other.eat1)
+			return false;
+		if (eat2 != other.eat2)
+			return false;
+		if (eat3 != other.eat3)
+			return false;
+		if (eat4 != other.eat4)
+			return false;
+		return true;
+	}
+	
+	
+	
+	
+	
+}
+
+
