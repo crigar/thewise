@@ -3,6 +3,9 @@ package unalcol.agents.examples.labyrinth.multeseo.eater.thewise;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
+
+import javax.sound.midi.Patch;
+
 import java.util.Queue;
 
 import unalcol.agents.Action;
@@ -21,7 +24,7 @@ public class Agent1 implements AgentProgram
 	private HashMap<Position, Integer> positionsNoExit = new HashMap<>();
 	private Stack<Node> stack = new Stack<Node>();
 	
-	private int maxLevel = 16;
+	private int maxLevel = 4;
 	private Node current,goal,newCurrent;
 	private Queue<Node> moves = new LinkedList();
 	private int d;
@@ -45,9 +48,11 @@ public class Agent1 implements AgentProgram
 	private boolean eat3= false;
 	private boolean eat4= false;
 	private HashMap<Position, Integer> codesEat = new HashMap<>();
-	
-	
-;
+	private int minLevelEnergy = 15;
+	private boolean ate = false;
+	private boolean searchingFood = false;
+	private Node home = null;
+	private boolean findingHome = false;
 	
 	
 	public Agent1( SimpleLanguage language )
@@ -149,7 +154,6 @@ public class Agent1 implements AgentProgram
 		}
 	}
 	public int move(Position initial, Position goal){
-		System.out.println(initial + " " + goal);
 		int move = -1;
 		int action = 0;
 		if ((initial.getX() == goal.getX() && initial.getY() + 1 == goal.getY() ) )move = 0;
@@ -267,33 +271,38 @@ public class Agent1 implements AgentProgram
 		}
 	}
 	
-	public int findGoodFoodAndReturn(){
-		//entrara  hasta que llegue a la comida buena mas cercana
-		if (pathFoodMostNearly.size() >= 2 && !flagComeBack) {
-			System.out.println("commmmm: " + comeBack);
-			Node initial = pathFoodMostNearly.pop();
-			Node goal = pathFoodMostNearly.pop();
-			comeBack.push(initial);
-			if (pathFoodMostNearly.size() == 0) {
-				comeBack.push(goal);
-			}
-			System.out.println(initial.getPosition() + " " + goal.getPosition());
-			int move = move(initial.getPosition(), goal.getPosition());
-			current = goal;
-			return move;
-		}
-		//se ejecutara para volver al nodo en el que estaba
-		if (comeBack.size() >= 2) {
-			System.out.println("comeback: " + comeBack);
-			flagComeBack = true;
-			Node initial = comeBack.pop();
-			Node goal = comeBack.get(comeBack.size()-1);
-			int move = move(initial.getPosition(), goal.getPosition());
-			current = goal;
-			return move;
-		}
-		flagComeBack = false;
-		return -1;
+	public int findGoodFood(){
+		searchingFood = true;
+		System.out.println("This is current: " + current);
+	
+		Node next = pathFoodMostNearly.pop();
+		comeBack.push(next);
+		System.out.println("Poping: " + next);
+		int d = move(current.getPosition(), next.getPosition());
+		
+		current = next;
+				
+		return d;
+	}
+	
+	public int findHome(){
+		
+		
+		System.out.println("Going Home, the current is: " + current);
+		
+		if (current.equals(home))
+			return -1;
+		
+		Node next = comeBack.pop();
+		
+		System.out.println("Going Home, Poping: " + next);
+		int d = move(current.getPosition(), next.getPosition());
+		
+		current = next;
+		
+		
+		return d;
+		
 		
 	}
 	
@@ -302,15 +311,35 @@ public class Agent1 implements AgentProgram
 		int move = -2;
 		
 		//en caso de que la energia sea muy baja
-		if (slowEnergy) {
-			move = findGoodFoodAndReturn();
-			if (move != -1) {
-				return move;
+		if (slowEnergy || searchingFood) {	
+			if (!searchingFood){
+				home = pathFoodMostNearly.pop();
+				comeBack.push(home);
+				
 			}
-			comeBack.clear();
-			slowEnergy = false;
-			System.err.println( "asdfasdfsdaf");
+			System.out.println("Good food: " + pathFoodMostNearly.get(0));
+			int val = findGoodFood();
+			if ( val == -1 ){
+				searchingFood = false;
+				findingHome = true;
+				comeBack.pop();
+				comeBack.pop();
+				System.out.println("Now we have: " + comeBack);
+			}
+			else return val;
 		}
+		
+		if (findingHome)	
+		{
+			System.out.println("To Home: " + home);
+			int d = findHome();
+			
+			if (d == -1)
+				findingHome = false;
+			else
+				return d;
+		}
+		
 		
 		Node next;
 		//Si hay que cambiar el nivel maximo del arbol de busqueda
@@ -343,39 +372,10 @@ public class Agent1 implements AgentProgram
 		return move;		
 	}
 
+	
 	@Override
 	public Action compute( Percept p )
 	{	
-		//COMIDAAAAA INIT
-		//guarda las posiciones de la comida buena y la comida mala
-		if (eat) {
-    		currentEnergy =  ( int ) p.getAttribute( "energy_level" );
-	    	if (currentEnergy >= partialEnergy) {
-	    		pathFoodMostNearly.clear();
-	    		pathFoodMostNearly.push(newCurrent);
-	    		goodEat = true;
-	    		if(!flagComeBack)slowEnergy = false;
-				goodFood.put(newCurrent.getPosition(), Math.abs(currentEnergy - partialEnergy ));
-			}else{
-				badFood.put(newCurrent.getPosition(), Math.abs(currentEnergy - partialEnergy ));
-				//slowEnergy = true; // se debe borrar
-			}
-	    	eat = false;
-	    	
-		}
-		//COMIDAAAAA FIN
-		boolean AF = false, AD = false, AA = false, AI = false;
-		boolean agente = false;
-		AF = ( ( Boolean ) p.getAttribute( language.getPercept( 6 ) ) ).
-				booleanValue();;
-	    AD = ( ( Boolean ) p.getAttribute( language.getPercept( 7 ) ) ).
-				booleanValue();
-	    AA = ( ( Boolean ) p.getAttribute( language.getPercept( 8 ) ) ).
-				booleanValue();
-	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
-				booleanValue();
-		if( cmds.size() == 0 )
-		{
 			boolean PF = ( ( Boolean ) p.getAttribute( language.getPercept( 0 ) ) ).
 				booleanValue();
 		    boolean PD = ( ( Boolean ) p.getAttribute( language.getPercept( 1 ) ) ).
@@ -388,94 +388,91 @@ public class Agent1 implements AgentProgram
 				booleanValue();
 		    boolean FAIL = ( ( Boolean ) p.getAttribute( language.getPercept( 5 ) ) ).
 				booleanValue();
-		    
-		    //COMIDA INIT
-		    currentEnergy = ( int ) p.getAttribute( "energy_level" );
-		    boolean eat = ( ( Boolean ) p.getAttribute( language.getPercept( 10 ) ) ).
+		    boolean food = ( ( Boolean ) p.getAttribute( language.getPercept( 10 ) ) ).
 					booleanValue();
-		    partialEnergy = currentEnergy;
 		    
-		    
-		    
-		    //entra si encuentra comida
-		    if (eat) {
-		    	eat1 = ( ( Boolean ) p.getAttribute( language.getPercept( 11 ) ) ).
-						booleanValue();
-		    	eat2 = ( ( Boolean ) p.getAttribute( language.getPercept( 12 ) ) ).
-						booleanValue();
-		    	eat3 = ( ( Boolean ) p.getAttribute( language.getPercept( 13 ) ) ).
-						booleanValue();
-		    	eat4 = ( ( Boolean ) p.getAttribute( language.getPercept( 14 ) ) ).
-						booleanValue();
-		    	
-		    	//entra si la comida es buena o no la conoce
-		    	if (!badFood.containsKey(current.getPosition())) {
-		    		lastGoodFood = current.getPosition();
-		    		cmds.add( language.getAction( 4 ) );
-		    		if (goodFood.containsKey(current.getPosition())) {
-		    			cmds.add( language.getAction( 4 ) );
-		    			cmds.add( language.getAction( 4 ) );
-		    			cmds.add( language.getAction( 4 ) );
-					}
+//		boolean AF = false, AD = false, AA = false, AI = false;
+//		boolean agente = false;
+//		AF = ( ( Boolean ) p.getAttribute( language.getPercept( 6 ) ) ).
+//				booleanValue();;
+//	    AD = ( ( Boolean ) p.getAttribute( language.getPercept( 7 ) ) ).
+//				booleanValue();
+//	    AA = ( ( Boolean ) p.getAttribute( language.getPercept( 8 ) ) ).
+//				booleanValue();
+//	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
+//				booleanValue();
+		if( cmds.size() == 0 )
+		{
+			
+			
+			
+			System.out.println("This is the Path to the most nearly food: " + pathFoodMostNearly); 
+			
+			if (!searchingFood){
+				//!pathFoodMostNearly.contains(current) && 
+				
+				if (pathFoodMostNearly.contains(current))
+				{
+					while(!pathFoodMostNearly.peek().equals(current))
+						pathFoodMostNearly.pop();
+				}
+				else 
+					pathFoodMostNearly.push(current);
+				
+			}
+				
+			currentEnergy = ( int ) p.getAttribute( "energy_level" );
+			if (ate) {
+		    	if (currentEnergy - partialEnergy >= 0) {
+		    		pathFoodMostNearly.clear();
+		    		pathFoodMostNearly.push(newCurrent);
+		    		
+					goodFood.put(newCurrent.getPosition(), Math.abs(currentEnergy - partialEnergy));
+				}else{
+					badFood.put(newCurrent.getPosition(),  Math.abs(currentEnergy - partialEnergy));
 				}
 			}
 			
-		    
-		    
-		    System.out.println("energy: "+ currentEnergy);
-		    //System.out.println("good "  + goodFood);
-		    //System.out.println("bad "  + badFood);
-		    //System.out.println("Current: " + current);
-		    //System.out.println("Camino: " + pathFoodMostNearly);
-		    newCurrent  = current;
-		    
-		    //agrega un nodo para ir generando el camino a la comida mas cercana
-		    if (goodEat ){
-		    	//verifica si el nodo ya ha sido agregado
-		    	if (pathFoodMostNearly.contains(current)) {
-					pathFoodMostNearly.pop();
-				}else{
-					pathFoodMostNearly.push(current);
+			if (food && !ate && !badFood.containsKey(current.getPosition())) {
+				partialEnergy = ( int ) p.getAttribute( "energy_level" );
+				System.out.println("Bad food: " + badFood);
+				
+				cmds.add( language.getAction( 4 ) );
+				
+				if (goodFood.containsKey(current.getPosition()))
+				{
+					cmds.add( language.getAction( 4 ) );
+					cmds.add( language.getAction( 4 ) );
+					cmds.add( language.getAction( 4 ) );
+					
 				}
-		    	
-		    }
-		    //COMIDA FIN
-		    d = accion( PF, PD, PA, PI, MT, FAIL );
-		    
-		    if( 0 <= d && d < 4 )
-		    {
-		    	
-		    	for( int i = 1; i <= d; i++ ){
-		    		cmds.add( language.getAction( 3 ) ); //rotate
-		    	}
-		    	
-		    	cmds.add( language.getAction( 2 ) ); // advance
-		    }
-		    else
-		    	cmds.add( language.getAction( 0 ) ); // die
+				ate = true;
+				newCurrent = current;
+			}else{
+				ate = false;
+				
+				System.out.println("My Current Energy is: " + currentEnergy);
+				
+				
+				
+				slowEnergy = currentEnergy <= minLevelEnergy;
+				
+				d = accion( PF, PD, PA, PI, MT, FAIL );
+			    if( 0 <= d && d < 4 )
+			    {
+			    	for( int i = 1; i <= d; i++ ){
+			    		cmds.add( language.getAction( 3 ) ); //rotate
+			    	}
+			    	
+			    	cmds.add( language.getAction( 2 ) ); // advance
+			    }
+			    else
+			    	cmds.add( language.getAction( 0 ) ); // die
+			}
 		}
 		
-		if (d == 0 && AF) agente = true;
-    	if (d == 1 && AD) agente = true;
-    	if (d == 2 && AA) agente = true;
-    	if (d == 3 && AI) agente = true;
-    	
     	String x = cmds.get( 0 );
-    	
-    	if (x.equals("eat")) {
-    		eat = true;
-    		if (currentEnergy <= 15) {
-				slowEnergy = true;
-			}
-    	}
-		
-    	
-    	if (agente && x.equals("advance") ) {
-			for (int i = 0; i < 4; i++) {
-				cmds.add(0, language.getAction(3)); //rotate
-			}
-			x = cmds.get(0);
-		}
+			
     	cmds.remove( 0 );
 		return new Action( x );
 	}
