@@ -275,7 +275,6 @@ public class Agent1 implements AgentProgram
 			Node goal = pathFoodMostNearly.pop();
 			comeBack.push(initial);
 			if (pathFoodMostNearly.size() == 0) {
-				
 				comeBack.push(goal);
 			}
 			System.out.println(initial.getPosition() + " " + goal.getPosition());
@@ -306,9 +305,7 @@ public class Agent1 implements AgentProgram
 		if (slowEnergy) {
 			move = findGoodFoodAndReturn();
 			if (move != -1) {
-				
 				return move;
-				
 			}
 			comeBack.clear();
 			slowEnergy = false;
@@ -349,6 +346,7 @@ public class Agent1 implements AgentProgram
 	@Override
 	public Action compute( Percept p )
 	{	
+		//COMIDAAAAA INIT
 		//guarda las posiciones de la comida buena y la comida mala
 		if (eat) {
     		currentEnergy =  ( int ) p.getAttribute( "energy_level" );
@@ -365,6 +363,7 @@ public class Agent1 implements AgentProgram
 	    	eat = false;
 	    	
 		}
+		//COMIDAAAAA FIN
 		boolean AF = false, AD = false, AA = false, AI = false;
 		boolean agente = false;
 		AF = ( ( Boolean ) p.getAttribute( language.getPercept( 6 ) ) ).
@@ -390,10 +389,12 @@ public class Agent1 implements AgentProgram
 		    boolean FAIL = ( ( Boolean ) p.getAttribute( language.getPercept( 5 ) ) ).
 				booleanValue();
 		    
+		    //COMIDA INIT
 		    currentEnergy = ( int ) p.getAttribute( "energy_level" );
 		    boolean eat = ( ( Boolean ) p.getAttribute( language.getPercept( 10 ) ) ).
 					booleanValue();
 		    partialEnergy = currentEnergy;
+		    
 		    
 		    
 		    //entra si encuentra comida
@@ -419,9 +420,7 @@ public class Agent1 implements AgentProgram
 				}
 			}
 			
-		    if (currentEnergy <= 15) {
-				slowEnergy = true;
-			}
+		    
 		    
 		    System.out.println("energy: "+ currentEnergy);
 		    //System.out.println("good "  + goodFood);
@@ -440,7 +439,7 @@ public class Agent1 implements AgentProgram
 				}
 		    	
 		    }
-		    
+		    //COMIDA FIN
 		    d = accion( PF, PD, PA, PI, MT, FAIL );
 		    
 		    if( 0 <= d && d < 4 )
@@ -465,6 +464,9 @@ public class Agent1 implements AgentProgram
     	
     	if (x.equals("eat")) {
     		eat = true;
+    		if (currentEnergy <= 15) {
+				slowEnergy = true;
+			}
     	}
 		
     	
