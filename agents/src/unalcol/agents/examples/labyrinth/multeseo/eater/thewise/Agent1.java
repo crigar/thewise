@@ -26,7 +26,7 @@ public class Agent1 implements AgentProgram
 	private HashMap<Position, Integer> positionsNoExit = new HashMap<>();
 	private Stack<Node> stack = new Stack<Node>();
 	
-	private int maxLevel = 4;
+	private int maxLevel = 32;
 	private Node current,goal,newCurrent;
 	private Queue<Node> moves = new LinkedList();
 	private int d;
@@ -68,6 +68,9 @@ public class Agent1 implements AgentProgram
 		Node first = new Node( new Position(0, 0),null, 0,true );
 		current = first;
 		root = first;
+		
+		maxLevel = Math.random() >= 0.5? 60:15;
+		System.out.println(maxLevel);
 		
 	}
 	public boolean chechPositionsAdded(Position position){
@@ -280,8 +283,12 @@ public class Agent1 implements AgentProgram
 	
 	public int findGoodFood(){
 		searchingFood = true;
-	
+		
+		System.out.println("Camino a comida mas cercana: " + pathFoodMostNearly);
+		
+		System.out.println("current: " + current.getPosition());
 		Node next = pathFoodMostNearly.pop();
+		System.out.println("Next: " + next.getPosition());
 		comeBack.push(next);
 		int d = move(current.getPosition(), next.getPosition());
 		
@@ -376,6 +383,7 @@ public class Agent1 implements AgentProgram
 	@Override
 	public Action compute( Percept p )
 	{	
+			
 			boolean PF = ( ( Boolean ) p.getAttribute( language.getPercept( 0 ) ) ).
 				booleanValue();
 		    boolean PD = ( ( Boolean ) p.getAttribute( language.getPercept( 1 ) ) ).
@@ -391,16 +399,16 @@ public class Agent1 implements AgentProgram
 		    boolean food = ( ( Boolean ) p.getAttribute( language.getPercept( 10 ) ) ).
 					booleanValue();
 		    
-//		boolean AF = false, AD = false, AA = false, AI = false;
-//		boolean agente = false;
-//		AF = ( ( Boolean ) p.getAttribute( language.getPercept( 6 ) ) ).
-//				booleanValue();;
-//	    AD = ( ( Boolean ) p.getAttribute( language.getPercept( 7 ) ) ).
-//				booleanValue();
-//	    AA = ( ( Boolean ) p.getAttribute( language.getPercept( 8 ) ) ).
-//				booleanValue();
-//	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
-//				booleanValue();
+		boolean AF = false, AD = false, AA = false, AI = false;
+		boolean agente = false;
+		AF = ( ( Boolean ) p.getAttribute( language.getPercept( 6 ) ) ).
+				booleanValue();;
+	    AD = ( ( Boolean ) p.getAttribute( language.getPercept( 7 ) ) ).
+				booleanValue();
+	    AA = ( ( Boolean ) p.getAttribute( language.getPercept( 8 ) ) ).
+				booleanValue();
+	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
+				booleanValue();
 		    
 		    
 	    currentEnergy = ( int ) p.getAttribute( "energy_level" );
@@ -439,7 +447,7 @@ public class Agent1 implements AgentProgram
 		{
 			
 			
-			
+			System.out.println("Energia: " + currentEnergy	);
 			
 			if (!searchingFood){
 				//!pathFoodMostNearly.contains(current) && 
@@ -498,8 +506,11 @@ public class Agent1 implements AgentProgram
 					eatingGood = true;
 					///if (!maxEnergyFound)
 					
-					for (int i = 0; i < numberOfFeed; i++)
-						cmds.add( language.getAction( 4 ) );
+//					for (int i = 0; i < numberOfFeed; i++)
+//						cmds.add( language.getAction( 4 ) );
+					cmds.add( language.getAction( 4 ) );
+					cmds.add( language.getAction( 4 ) );
+					cmds.add( language.getAction( 4 ) );
 					
 				}
 				ate = true;
@@ -523,11 +534,26 @@ public class Agent1 implements AgentProgram
 			    }
 			    else
 			    	cmds.add( language.getAction( 0 ) ); // die
+			    
+			    if (d == 0 && AF) agente = true;
+		    	if (d == 1 && AD) agente = true;
+		    	if (d == 2 && AA) agente = true;
+		    	if (d == 3 && AI) agente = true;
 			}
 		}
 		
     	String x = cmds.get( 0 );
-			
+		
+    	
+    	
+    	if (x.equals("advance") && agente) {
+			for (int i = 0; i < 4; i++) {
+				cmds.add(0, language.getAction( 3 ) ); //rotate
+			}
+			x = cmds.get(0);
+		}
+    	
+    	
     	cmds.remove( 0 );
 		return new Action( x );
 	}
