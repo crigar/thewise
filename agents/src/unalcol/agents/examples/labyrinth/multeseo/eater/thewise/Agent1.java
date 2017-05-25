@@ -1,15 +1,10 @@
-package unalcol.agents.examples.labyrinth.multeseo.eater.thewise;
+package unalcol.agents.examples.labyrinth.multeseo.eater.isi2017.thewise;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Stack;
-
-import javax.sound.midi.Patch;
-import javax.swing.text.html.HTMLDocument.HTMLReader.PreAction;
-
 import java.util.Queue;
-
 import unalcol.agents.Action;
 import unalcol.agents.AgentProgram;
 import unalcol.agents.Percept;
@@ -69,8 +64,7 @@ public class Agent1 implements AgentProgram
 		current = first;
 		root = first;
 		
-		maxLevel = Math.random() >= 0.5? 60:15;
-		System.out.println(maxLevel);
+		maxLevel = 25;
 		
 	}
 	public boolean chechPositionsAdded(Position position){
@@ -273,7 +267,7 @@ public class Agent1 implements AgentProgram
 	}
 	public void changeMaxLevel(){
 		if (current.equals(root)){
-			maxLevel = maxLevel + maxLevel;
+			maxLevel = maxLevel + 35;
 			current = root;
 			positionsAdded.clear();
 			tree.clear();
@@ -284,11 +278,8 @@ public class Agent1 implements AgentProgram
 	public int findGoodFood(){
 		searchingFood = true;
 		
-		System.out.println("Camino a comida mas cercana: " + pathFoodMostNearly);
 		
-		System.out.println("current: " + current.getPosition());
 		Node next = pathFoodMostNearly.pop();
-		System.out.println("Next: " + next.getPosition());
 		comeBack.push(next);
 		int d = move(current.getPosition(), next.getPosition());
 		
@@ -321,7 +312,7 @@ public class Agent1 implements AgentProgram
 		int move = -2;
 		
 		//en caso de que la energia sea muy baja
-		if (slowEnergy || searchingFood) {	
+		if ((slowEnergy && !goodFoodCode.isEmpty() && pathFoodMostNearly.size() >= 2) || searchingFood) {	
 			if (!searchingFood){
 				home = pathFoodMostNearly.pop();
 				comeBack.push(home);
@@ -410,8 +401,9 @@ public class Agent1 implements AgentProgram
 	    AI = ( ( Boolean ) p.getAttribute( language.getPercept( 9 ) ) ).
 				booleanValue();
 		    
-		    
-	    currentEnergy = ( int ) p.getAttribute( "energy_level" );
+	    currentEnergy = ( int ) p.getAttribute( "energy_level" );	    
+	    /*
+	     
 		if (eatingGood)
 		{
 			if (partialEnergy >= currentEnergy){
@@ -442,12 +434,10 @@ public class Agent1 implements AgentProgram
 			}
 				
 		}
-		    
+		    */
 		if( cmds.size() == 0 )
 		{
 			
-			
-			System.out.println("Energia: " + currentEnergy	);
 			
 			if (!searchingFood){
 				//!pathFoodMostNearly.contains(current) && 
@@ -511,6 +501,7 @@ public class Agent1 implements AgentProgram
 					cmds.add( language.getAction( 4 ) );
 					cmds.add( language.getAction( 4 ) );
 					cmds.add( language.getAction( 4 ) );
+					
 					
 				}
 				ate = true;

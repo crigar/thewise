@@ -1,4 +1,4 @@
-package unalcol.agents.examples.labyrinth.multeseo.eater.thewise;
+package unalcol.agents.examples.labyrinth.multeseo.eater.isi2017.thewise;
 
 public class Position
 {
